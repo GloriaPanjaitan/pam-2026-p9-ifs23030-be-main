@@ -3,11 +3,8 @@ from google import genai
 
 def generate_from_llm(country: str, count: int):
     try:
-        # Inisialisasi client
-        # Pastikan di file .env kamu kuncinya adalah GEMINI_API_KEY
         client = genai.Client()
 
-        # Kita buat prompt yang sangat spesifik sesuai permintaanmu
         prompt = f"""
         Kamu adalah seorang kurator museum senjata bersejarah.
         
@@ -28,15 +25,13 @@ def generate_from_llm(country: str, count: int):
         - Jika input '{country}' bukan nama negara yang valid, jawab dengan: "Maaf, data pedang untuk wilayah tersebut tidak ditemukan."
         """
 
-        # Menggunakan model Gemini 1.5 Flash (atau 2.0 jika tersedia di akunmu)
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-1.5-flash-latest',  # 🔥 FIX DI SINI
             contents=prompt,
         )
 
         raw_text = response.text
 
-        # Pembersihan markdown jika ada
         if raw_text.startswith("```json"):
             raw_text = raw_text.replace("```json", "", 1).replace("```", "")
         elif raw_text.startswith("```"):
