@@ -26,7 +26,7 @@ def generate_from_llm(country: str, count: int):
         """
 
         response = client.models.generate_content(
-            model='gemini-1.5-flash-001',
+            model='gemini-2.5-flash',
             contents=prompt,
         )
 
