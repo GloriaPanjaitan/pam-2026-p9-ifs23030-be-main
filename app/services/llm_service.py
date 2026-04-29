@@ -1,4 +1,4 @@
-import os
+import json
 from google import genai
 
 def generate_from_llm(country: str, count: int):
@@ -6,44 +6,44 @@ def generate_from_llm(country: str, count: int):
         client = genai.Client()
 
         prompt = f"""
-        Kamu adalah seorang kurator museum senjata bersejarah.
-        
+        Kamu adalah ahli sejarah senjata.
+
         TUGAS:
-        Berikan daftar {count} jenis pedang tradisional atau legendaris yang berasal dari negara: {country}.
-        
-        FORMAT JAWABAN:
-        1. Sebutkan nama pedang.
-        2. Berikan deskripsi singkat bentuk dan kegunaannya.
-        3. Berikan sejarah singkat atau fakta menariknya.
-        
-        ATURAN KHUSUS:
-        - Jika negara '{country}' ternyata hanya memiliki jumlah pedang ikonik yang kurang dari {count}, 
-          tampilkan semua yang tersedia saja.
-        - Jika hal itu terjadi, di akhir jawaban WAJIB tambahkan kalimat: 
-          "Catatan: Hanya pedang-pedang ini yang merupakan ciri khas utama dari negara tersebut."
-        - Gunakan bahasa Indonesia yang santai tapi edukatif.
-        - Jika input '{country}' bukan nama negara yang valid, jawab dengan: "Maaf, data pedang untuk wilayah tersebut tidak ditemukan."
+        Buat {count} pedang legendaris dari negara {country}.
+
+        FORMAT OUTPUT (WAJIB JSON VALID):
+        [
+          {{
+            "name": "Nama Pedang",
+            "description": "Deskripsi lengkap + sejarah singkat"
+          }}
+        ]
+
+        ATURAN:
+        - Output HARUS JSON saja
+        - TANPA penjelasan tambahan
+        - TANPA markdown
         """
 
         response = client.models.generate_content(
-            model='gemini-1.5-flash-latest',  # 🔥 FIX DI SINI
+            model='gemini-1.5-flash-latest',
             contents=prompt,
         )
 
-        raw_text = response.text
+        raw_text = response.text.strip()
 
-        if raw_text.startswith("```json"):
-            raw_text = raw_text.replace("```json", "", 1).replace("```", "")
-        elif raw_text.startswith("```"):
-            raw_text = raw_text.replace("```", "")
+        # 🔥 Bersihkan kalau AI kasih markdown
+        if raw_text.startswith("```"):
+            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
 
-        raw_text = raw_text.strip()
+        # 🔥 Convert ke JSON
+        parsed = json.loads(raw_text)
 
-        return {
-            "country": country,
-            "requested_count": count,
-            "response": raw_text
-        }
+        # Validasi basic biar aman
+        if not isinstance(parsed, list):
+            raise Exception("Format AI bukan list")
+
+        return parsed
 
     except Exception as e:
-        raise Exception(f"PESAN ASLI GEMINI: {str(e)}")
+        raise Exception(f"Gagal parse AI: {str(e)}")

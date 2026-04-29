@@ -7,31 +7,32 @@ def create_swords(country: str, total: int):
     session = SessionLocal()
 
     try:
-        # Memanggil fungsi LLM yang sudah kita modifikasi sebelumnya
-        # Kita mengirimkan 'country' dan 'total' langsung
-        result = generate_from_llm(country, total)
+        swords = generate_from_llm(country, total)
 
-        # Mengambil teks jawaban dari dictionary yang dikembalikan LLMService
-        ai_response_text = result.get("response")
-
-        # 1. Simpan riwayat request ke RequestLog
         req_log = RequestLog(
             country=country,
             requested_count=total
         )
         session.add(req_log)
-        session.commit() # Commit agar kita dapat ID-nya
-
-        # 2. Simpan hasil jawaban AI ke tabel Sword
-        new_sword_entry = Sword(
-            content=ai_response_text,
-            request_id=req_log.id
-        )
-        session.add(new_sword_entry)
         session.commit()
 
-        # Kita kembalikan hasilnya dalam bentuk list agar sesuai dengan format route
-        return [ai_response_text]
+        result = []
+
+        for item in swords:
+            new_sword = Sword(
+                content=item["description"],
+                request_id=req_log.id
+            )
+            session.add(new_sword)
+
+            result.append({
+                "name": item["name"],
+                "description": item["description"]
+            })
+
+        session.commit()
+
+        return result
 
     except Exception as e:
         session.rollback()
